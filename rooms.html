@@ -641,6 +641,68 @@
       return (v ?? "").toString().trim().toUpperCase().replace(/[^A-Z0-9]/g,"");
     }
 
+
+    // ---- Request lock (prevents button spam) ----
+    let __busy = false;
+    let __lastCreateTs = 0;
+    const __MIN_CREATE_INTERVAL_MS = 4500; // simple cooldown
+
+    const __ui = {
+      createBtn: document.getElementById("createBtn"),
+      joinBtn: document.getElementById("joinBtn"),
+      refreshBtn: document.getElementById("refreshBtn"),
+      leaveBtn: document.getElementById("leaveBtn"),
+      copyMyCodeBtn: document.getElementById("copyMyCodeBtn"),
+      memberBtn: document.getElementById("memberBtn"),
+      roomInput: document.getElementById("roomInput")
+    };
+
+    const __labels = {
+      create: __ui.createBtn.textContent,
+      join: __ui.joinBtn.textContent,
+      refresh: __ui.refreshBtn.textContent
+    };
+
+    function setBusy(isBusy, labelOverride = null){
+      __busy = isBusy;
+      // Disable actions that would cause duplicate requests.
+      __ui.createBtn.disabled = isBusy;
+      __ui.joinBtn.disabled = isBusy;
+      __ui.refreshBtn.disabled = isBusy;
+      __ui.copyMyCodeBtn.disabled = isBusy;
+      __ui.memberBtn.disabled = isBusy;
+      __ui.roomInput.disabled = isBusy;
+
+      // Leave should still be possible if something hangs, so keep it enabled.
+      __ui.leaveBtn.disabled = false;
+
+      if(isBusy){
+        if(labelOverride){
+          __ui.createBtn.textContent = labelOverride;
+        }
+      }else{
+        __ui.createBtn.textContent = __labels.create;
+        __ui.joinBtn.textContent = __labels.join;
+        __ui.refreshBtn.textContent = __labels.refresh;
+      }
+    }
+
+    async function withLock(fn, labelOverride=null){
+      if(__busy) return;
+      setBusy(true, labelOverride);
+      try{
+        return await fn();
+      }finally{
+        setBusy(false);
+      }
+    }
+
+    function canCreateNow(){
+      const now = Date.now();
+      const dt = now - __lastCreateTs;
+      return dt >= __MIN_CREATE_INTERVAL_MS;
+    }
+
     // ---- Room logic ----
     const roomInput = document.getElementById("roomInput");
     const ROOM_KEY = "ts3_room_id_v1";
@@ -759,32 +821,36 @@
       if(pollTimer){ clearInterval(pollTimer); pollTimer = null; }
     }
 
-    document.getElementById("createBtn").addEventListener("click", async ()=>{
+    document.getElementById("createBtn").addEventListener("click", () => withLock(async () => {
       try{
+        const now = Date.now();
+        if(!canCreateNow()){
+          const wait = Math.ceil((__MIN_CREATE_INTERVAL_MS - (now - __lastCreateTs))/1000);
+          setStatus("warn", `Please wait ${wait}s before creating another room.` , currentRoomId);
+          return;
+        }
+        __lastCreateTs = now;
+        __ui.createBtn.textContent = "⏳ Creating…";
         await createRoom();
       }catch(e){
         setStatus("bad", `Create failed: ${e.message}`);
       }
-    });
-
-    document.getElementById("joinBtn").addEventListener("click", async ()=>{
+    }));document.getElementById("joinBtn").addEventListener("click", () => withLock(async () => {
       try{
+        __ui.joinBtn.textContent = "⏳ Joining…";
         await joinRoom(roomInput.value);
       }catch(e){
         setStatus("bad", `Join failed: ${e.message}`, currentRoomId);
       }
-    });
-
-    document.getElementById("refreshBtn").addEventListener("click", async ()=>{
+    }));document.getElementById("refreshBtn").addEventListener("click", () => withLock(async () => {
       try{
+        __ui.refreshBtn.textContent = "⏳ Refreshing…";
         updateMyShareCode();
         await refreshRoom();
       }catch(e){
         setStatus("bad", `Refresh failed: ${e.message}`, currentRoomId);
       }
-    });
-
-    document.getElementById("leaveBtn").addEventListener("click", ()=>{
+    }));document.getElementById("leaveBtn").addEventListener("click", ()=>{
       stopPolling();
       setRoom("");
       setStatus("", "Left the room.");
@@ -806,3 +872,4 @@
   </script>
 </body>
 </html>
+
