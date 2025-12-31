@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>TS3 Airports — Rooms</title>
+
+  <!-- Match the main app font stack -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg0:#0b0f17;
+      --bg1:#0f1726;
+      --card:#121a2b;
+      --card2:#0f1726;
+      --text:#e9eefc;
+      --muted:#9aa7c0;
+      --line:rgba(255,255,255,.08);
+      --btn:#1b2740;
+      --btn2:#22345a;
+      --good:#31d07b;
+      --warn:#ffcc00;
+      --bad:#ff4d4d;
+      --chip:#1b2440;
+      --shadow: 0 12px 40px rgba(0,0,0,.35);
+      --radius: 18px;
+      --fontTitle: "Rajdhani", Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      --fontBody: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+    body{
+      margin:0;
+      font-family:var(--fontBody);
+      color:var(--text);
+      background: radial-gradient(1200px 700px at 20% -10%, rgba(61,134,255,.18), transparent 60%),
+                  radial-gradient(900px 600px at 100% 10%, rgba(255,90,90,.10), transparent 55%),
+                  linear-gradient(180deg, var(--bg0), var(--bg1));
+      min-height:100vh;
+    }
+    body.light{
+      --bg0:#f3f6ff;
+      --bg1:#eef2ff;
+      --card:#ffffff;
+      --card2:#f7f9ff;
+      --text:#0b1222;
+      --muted:#5b6b88;
+      --line:rgba(0,0,0,.10);
+      --btn:#edf2ff;
+      --btn2:#dce7ff;
+      --chip:#eef2ff;
+      --shadow: 0 12px 30px rgba(0,0,0,.12);
+      background: radial-gradient(1100px 600px at 0% 0%, rgba(61,134,255,.15), transparent 55%),
+                  radial-gradient(900px 600px at 100% 10%, rgba(255,90,90,.10), transparent 55%),
+                  linear-gradient(180deg, var(--bg0), var(--bg1));
+    }
+
+    .wrap{max-width:1100px;margin:0 auto;padding:18px 16px 30px;}
+    .topbar{
+      display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+      padding:14px 14px;
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(18, 26, 43, .55);
+      backdrop-filter: blur(10px);
+      box-shadow: var(--shadow);
+    }
+    body.light .topbar{ background: rgba(255,255,255,.72); }
+    .brand{
+      display:flex;align-items:baseline;gap:10px;
+      font-family:var(--fontTitle);
+      letter-spacing:.3px;
+      margin-right:auto;
+    }
+    .brand h1{margin:0;font-size:22px;font-weight:700;}
+    .brand .sub{color:var(--muted);font-size:14px;font-family:var(--fontBody);}
+    .btn, .icon-btn{
+      border:1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+      color:var(--text);
+      padding:10px 12px;
+      border-radius: 14px;
+      cursor:pointer;
+      font-weight:600;
+      text-decoration:none;
+      display:inline-flex;align-items:center;gap:8px;
+      user-select:none;
+    }
+    .btn:hover, .icon-btn:hover{ background: rgba(255,255,255,.06); }
+    body.light .btn, body.light .icon-btn{ background: linear-gradient(180deg, rgba(0,0,0,.02), rgba(0,0,0,.01)); }
+    .icon-btn{padding:10px 12px}
+    .pill{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:10px 12px;border:1px solid var(--line);border-radius: 14px;
+      background: rgba(255,255,255,.03);
+      color:var(--muted);
+      font-weight:600;
+    }
+    .pill b{color:var(--text)}
+    .grid{display:grid;grid-template-columns: 1.1fr .9fr;gap:14px;margin-top:14px;}
+    @media(max-width: 980px){ .grid{grid-template-columns:1fr;} }
+    .card{
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(18, 26, 43, .55);
+      backdrop-filter: blur(10px);
+      box-shadow: var(--shadow);
+      padding:14px;
+    }
+    body.light .card{ background: rgba(255,255,255,.72); }
+    .card h2{
+      margin:0 0 10px;
+      font-family:var(--fontTitle);
+      font-size:18px;
+      letter-spacing:.3px;
+    }
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+    .row + .row{margin-top:10px;}
+    .input{
+      flex:1;
+      min-width: 220px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius: 14px;
+      outline:none;
+      font-weight:600;
+      letter-spacing:.4px;
+    }
+    body.light .input{ background: rgba(0,0,0,.02); }
+    .hint{color:var(--muted);font-size:13px;line-height:1.35;margin-top:8px;}
+    .status{
+      margin-top:10px;
+      border-top:1px solid var(--line);
+      padding-top:10px;
+      color:var(--muted);
+      display:flex;gap:10px;flex-wrap:wrap;align-items:center;
+      font-size:13px;
+    }
+    .badge{
+      display:inline-flex;align-items:center;
+      padding:3px 8px;border-radius: 999px;
+      border:1px solid var(--line);
+      font-weight:700;
+      font-size:12px;
+      color:var(--text);
+      background: rgba(255,255,255,.04);
+    }
+    .badge.good{ border-color: rgba(49,208,123,.35); }
+    .badge.warn{ border-color: rgba(255,204,0,.35); }
+    .badge.bad{  border-color: rgba(255,77,77,.35); }
+    .kpi{
+      display:flex;gap:10px;flex-wrap:wrap;align-items:center;
+      margin-top:10px;
+    }
+    .kpi .box{
+      flex:1;min-width:160px;
+      border:1px solid var(--line);border-radius: 16px;
+      padding:10px 12px;background: rgba(255,255,255,.03);
+    }
+    body.light .kpi .box{ background: rgba(0,0,0,.02); }
+    .kpi .v{ font-family: var(--fontTitle); font-size:22px; font-weight:800; }
+    .kpi .l{ color:var(--muted); font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.8px; }
+
+    .list{
+      display:flex;flex-direction:column;gap:10px;
+      max-height: calc(100vh - 230px);
+      overflow:auto;
+      padding-right: 4px;
+    }
+    .group{
+      border:1px solid var(--line);
+      border-radius: 16px;
+      padding:12px;
+      background: rgba(255,255,255,.03);
+    }
+    body.light .group{ background: rgba(0,0,0,.02); }
+    .group .title{
+      font-family:var(--fontTitle);
+      font-weight:800;
+      letter-spacing:.3px;
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      margin-bottom:10px;
+    }
+    .chips{display:flex;flex-wrap:wrap;gap:8px;}
+    .chip{
+      padding:7px 10px;
+      border-radius: 999px;
+      border:1px solid var(--line);
+      background: var(--chip);
+      font-weight:800;
+      letter-spacing:.5px;
+      font-size:12px;
+    }
+    .error{color: var(--bad); font-weight:700;}
+    .ok{color: var(--good); font-weight:700;}
+    .sep{height:1px;background:var(--line);margin:12px 0;}
+    .tiny{font-size:12px;color:var(--muted);}
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;}
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <h1>TS3 Rooms</h1>
+        <div class="sub">Create / Join a room and see airports everyone owns</div>
+      </div>
+
+      <a class="icon-btn" href="index.html" title="Back to airports" aria-label="Back to airports">🛬 Airports</a>
+      <button id="themeBtn" class="icon-btn" type="button" title="Toggle theme" aria-label="Toggle theme">🌓</button>
+
+      <button id="memberBtn" class="icon-btn" type="button" title="Set memberID" aria-label="Set memberID">👤 <span id="memberInline" class="mono">—</span></button>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Room</h2>
+
+        <div class="row">
+          <button id="createBtn" class="btn" type="button">➕ Create room</button>
+          <button id="refreshBtn" class="btn" type="button">🔄 Refresh</button>
+          <button id="leaveBtn" class="btn" type="button">⛔ Leave</button>
+        </div>
+
+        <div class="row">
+          <input id="roomInput" class="input mono" type="text" placeholder="ROOM CODE (e.g. DRNC23)" maxlength="16" />
+          <button id="joinBtn" class="btn" type="button">➡️ Join</button>
+        </div>
+
+        <div class="row">
+          <input id="myCode" class="input mono" type="text" readonly />
+          <button id="copyMyCodeBtn" class="btn" type="button">📋 Copy my code</button>
+        </div>
+
+        <div class="hint">
+          Flow: set your <b>memberID</b> → open Airports page to select your airports → come back here → <b>Create</b> or <b>Join</b> a room.
+          This page will fetch all members and show <b>only the airports everyone has</b>.
+        </div>
+
+        <div class="status" id="statusLine">
+          <span class="badge" id="roomBadge">No room</span>
+          <span id="statusText">Not connected.</span>
+        </div>
+
+        <div class="kpi">
+          <div class="box">
+            <div class="v" id="kpiMembers">0</div>
+            <div class="l">Members in room</div>
+          </div>
+          <div class="box">
+            <div class="v" id="kpiCommon">0</div>
+            <div class="l">Common airports</div>
+          </div>
+          <div class="box">
+            <div class="v" id="kpiReady">0</div>
+            <div class="l">With selection</div>
+          </div>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="tiny">
+          API base: <span id="apiBaseText" class="mono"></span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Common airports</h2>
+        <div class="tiny" id="commonMeta">—</div>
+        <div class="sep"></div>
+        <div class="list" id="commonList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Member modal -->
+  <div id="memberModal" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);">
+    <div style="width:min(520px,100%);border:1px solid var(--line);border-radius:18px;background:var(--card);box-shadow:var(--shadow);padding:14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+        <div style="font-family:var(--fontTitle);font-size:18px;font-weight:800;">Set memberID</div>
+        <button id="closeMemberBtn" class="icon-btn" type="button">✖</button>
+      </div>
+      <div class="hint" style="margin-top:6px;">
+        Allowed: <b>A–Z</b>, <b>0–9</b>, <b>_</b>, <b>-</b> (3–20 chars). Example: <span class="mono">Nico</span> or <span class="mono">NICO_01</span>
+      </div>
+      <div class="row" style="margin-top:10px;">
+        <input id="memberInput" class="input mono" type="text" placeholder="memberID" maxlength="20" />
+        <button id="saveMemberBtn" class="btn" type="button">💾 Save</button>
+      </div>
+      <div id="memberErr" class="hint error" style="min-height:18px;"></div>
+    </div>
+  </div>
+
+  <script>
+    // ---- Local settings keys (match your main app for memberId/theme) ----
+    const THEME_KEY = "icao_checklist_theme_v4";
+    const MEMBER_ID_KEY = "ts3_member_id_v1";
+    const STORAGE_KEY = "icao_checklist_data_v4";
+
+    // API base (HTTP API invoke URL root). You can override via localStorage.
+    const API_BASE_KEY = "ts3_api_base_v1";
+    const DEFAULT_API_BASE = "https://73yhcx0db7.execute-api.eu-north-1.amazonaws.com";
+
+    const apiBase = (localStorage.getItem(API_BASE_KEY) || DEFAULT_API_BASE).replace(/\/+$/,"");
+    document.getElementById("apiBaseText").textContent = apiBase;
+
+    // ---- Theme ----
+    function applyTheme(theme){
+      document.body.classList.toggle("light", theme === "light");
+      localStorage.setItem(THEME_KEY, theme);
+    }
+    const savedTheme = localStorage.getItem(THEME_KEY) || "dark";
+    applyTheme(savedTheme);
+    document.getElementById("themeBtn").addEventListener("click", ()=>{
+      const now = document.body.classList.contains("light") ? "dark" : "light";
+      applyTheme(now);
+    });
+
+    // ---- memberId ----
+    function validateMemberId(v){
+      const s = (v ?? "").toString().trim();
+      if (!s) return {ok:false, msg:"Please enter a memberID."};
+      if (s.length < 3 || s.length > 20) return {ok:false, msg:"Length must be 3–20 characters."};
+      if (!/^[A-Za-z0-9_-]+$/.test(s)) return {ok:false, msg:"Allowed characters: A–Z, 0–9, _ and -."};
+      return {ok:true, value:s};
+    }
+    function getMemberId(){
+      return (localStorage.getItem(MEMBER_ID_KEY) || "").trim();
+    }
+    function setMemberId(v){
+      localStorage.setItem(MEMBER_ID_KEY, v);
+      updateMemberUi();
+    }
+    function updateMemberUi(){
+      const m = getMemberId();
+      document.getElementById("memberInline").textContent = m || "—";
+    }
+    updateMemberUi();
+
+    const memberModal = document.getElementById("memberModal");
+    const memberBtn = document.getElementById("memberBtn");
+    const memberInput = document.getElementById("memberInput");
+    const memberErr = document.getElementById("memberErr");
+    function openMemberModal(){
+      memberErr.textContent = "";
+      memberInput.value = getMemberId();
+      memberModal.style.display = "flex";
+      setTimeout(()=>memberInput.focus(), 0);
+    }
+    function closeMemberModal(){
+      memberModal.style.display = "none";
+    }
+    memberBtn.addEventListener("click", openMemberModal);
+    document.getElementById("closeMemberBtn").addEventListener("click", closeMemberModal);
+    memberModal.addEventListener("click", (e)=>{ if(e.target === memberModal) closeMemberModal(); });
+    document.getElementById("saveMemberBtn").addEventListener("click", ()=>{
+      const r = validateMemberId(memberInput.value);
+      if(!r.ok){ memberErr.textContent = r.msg; return; }
+      setMemberId(r.value);
+      closeMemberModal();
+    });
+
+    // ---- Data model & share-code encode/decode (same as main app) ----
+    // NOTE: demoData is only used to build a stable airport catalog & for grouping by continent/country.
+    const demoData = [
+      { title:"North America", groups:[
+        { title:"United States", items:[{id:"KJFK",text:"KJFK",done:false},{id:"KLGA",text:"KLGA",done:false},{id:"KMIA",text:"KMIA",done:false},{id:"KMCO",text:"KMCO",done:false},{id:"KORD",text:"KORD",done:false},{id:"KATL",text:"KATL",done:false},{id:"KPHX",text:"KPHX",done:false},{id:"KPDX",text:"KPDX",done:false},{id:"KBWI",text:"KBWI",done:false},{id:"KHOU",text:"KHOU",done:false},{id:"KIND",text:"KIND",done:false},{id:"KLGB",text:"KLGB",done:false},{id:"KMCI",text:"KMCI",done:false},{id:"KMEM",text:"KMEM",done:false},{id:"KMSP",text:"KMSP",done:false},{id:"KMSY",text:"KMSY",done:false},{id:"KRHV",text:"KRHV",done:false},{id:"KEUG",text:"KEUG",done:false}] },
+        { title:"Canada", items:[{id:"CYUL",text:"CYUL",done:false},{id:"CYTZ",text:"CYTZ",done:false},{id:"CYVR",text:"CYVR",done:false}] },
+        { title:"Hawaii", items:[{id:"PHKO",text:"PHKO",done:false}] },
+        { title:"Guam", items:[{id:"PGUM",text:"PGUM",done:false}] },
+        { title:"Alaska", items:[{id:"PANC",text:"PANC",done:false}] }
+      ]},
+      { title:"South America", groups:[
+        { title:"Brazil", items:[{id:"SBSP",text:"SBSP",done:false}] },
+        { title:"Colombia", items:[{id:"SKBO",text:"SKBO",done:false}] }
+      ]},
+      { title:"Europe", groups:[
+        { title:"Germany", items:[{id:"EDDF",text:"EDDF",done:false},{id:"EDDH",text:"EDDH",done:false},{id:"EDDK",text:"EDDK",done:false},{id:"EDDM",text:"EDDM",done:false},{id:"EDDS",text:"EDDS",done:false}] },
+        { title:"United Kingdom", items:[{id:"EGLL",text:"EGLL",done:false},{id:"EGNX",text:"EGNX",done:false}] },
+        { title:"Norway", items:[{id:"ENGM",text:"ENGM",done:false}] },
+        { title:"France", items:[{id:"LFPG",text:"LFPG",done:false},{id:"LFPO",text:"LFPO",done:false},{id:"LFMT",text:"LFMT",done:false}] },
+        { title:"Greece", items:[{id:"LGAV",text:"LGAV",done:false}] },
+        { title:"Italy", items:[{id:"LIMC",text:"LIMC",done:false}] },
+        { title:"Romania", items:[{id:"LROP",text:"LROP",done:false}] },
+        { title:"Switzerland", items:[{id:"LSGG",text:"LSGG",done:false}] },
+        { title:"Slovenia", items:[{id:"LJLJ",text:"LJLJ",done:false}] },
+        { title:"Turkey", items:[{id:"LTFM",text:"LTFM",done:false}] }
+      ]},
+      { title:"Asia", groups:[
+        { title:"Israel", items:[{id:"LLBG",text:"LLBG",done:false}] },
+        { title:"Qatar", items:[{id:"OTHH",text:"OTHH",done:false}] },
+        { title:"Japan", items:[{id:"RJFF",text:"RJFF",done:false}] },
+        { title:"Macau", items:[{id:"VMMC",text:"VMMC",done:false}] },
+        { title:"Malaysia", items:[{id:"WMMK",text:"WMMK",done:false}] },
+        { title:"China", items:[{id:"ZBAA",text:"ZBAA",done:false},{id:"ZGSZ",text:"ZGSZ",done:false}] }
+      ]},
+      { title:"Oceania", groups:[
+        { title:"Australia", items:[{id:"YSSY",text:"YSSY",done:false}] }
+      ]},
+      { title:"Africa", groups:[
+        { title:"South Africa", items:[{id:"FAOR",text:"FAOR",done:false}] }
+      ]},
+      { title:"Imported", groups:[
+        { title:"Unknown", items:[] }
+      ]}
+    ];
+
+    function normalizeIcao(v){
+      return (v ?? "").toString().trim().toUpperCase().replace(/[^A-Z0-9]/g,"");
+    }
+
+    const AIRPORTS_VERSION = "A1";
+    const AIRPORT_CATALOG = (() => {
+      const set = new Set();
+      for (const cont of demoData) {
+        for (const country of (cont.groups || [])) {
+          for (const item of (country.items || [])) {
+            const code = normalizeIcao(item.text);
+            if (code && code.length === 4) set.add(code);
+          }
+        }
+      }
+      return Array.from(set).sort();
+    })();
+    const ICAO_TO_INDEX = new Map(AIRPORT_CATALOG.map((c,i)=>[c,i]));
+
+    function bytesToBase64(bytes){
+      let bin = "";
+      for (let i=0;i<bytes.length;i++) bin += String.fromCharCode(bytes[i]);
+      return btoa(bin);
+    }
+    function base64ToBytes(b64){
+      const bin = atob(b64);
+      const out = new Uint8Array(bin.length);
+      for (let i=0;i<bin.length;i++) out[i] = bin.charCodeAt(i) & 255;
+      return out;
+    }
+    function toBase64Url(b64){
+      return b64.replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/g,"");
+    }
+    function fromBase64Url(b64url){
+      let b64 = b64url.replace(/-/g,"+").replace(/_/g,"/");
+      const pad = b64.length % 4;
+      if (pad === 2) b64 += "==";
+      else if (pad === 3) b64 += "=";
+      else if (pad !== 0) throw new Error("Invalid base64url length");
+      return b64;
+    }
+
+    function encodeSetToShareCode(set){
+      const bytesLen = Math.ceil(AIRPORT_CATALOG.length / 8);
+      const bytes = new Uint8Array(bytesLen);
+      for (const code of set){
+        const idx = ICAO_TO_INDEX.get(code);
+        if (idx == null) continue;
+        const bi = Math.floor(idx / 8);
+        const bit = idx % 8;
+        bytes[bi] |= (1 << bit);
+      }
+      const b64 = bytesToBase64(bytes);
+      return `${AIRPORTS_VERSION}.${toBase64Url(b64)}`;
+    }
+
+    function decodeShareCodeToSet(rawCode){
+      if(!rawCode) throw new Error("Empty code");
+      const trimmed = rawCode.trim();
+      let version = AIRPORTS_VERSION;
+      let payload = trimmed;
+
+      const dotIdx = trimmed.indexOf(".");
+      if(dotIdx > 0){
+        version = trimmed.slice(0, dotIdx).trim();
+        payload = trimmed.slice(dotIdx + 1).trim();
+      }
+      if(version !== AIRPORTS_VERSION){
+        throw new Error(`Version mismatch (got ${version}, need ${AIRPORTS_VERSION})`);
+      }
+      const b64 = fromBase64Url(payload);
+      const bytes = base64ToBytes(b64);
+
+      const expectedLen = Math.ceil(AIRPORT_CATALOG.length / 8);
+      if(bytes.length !== expectedLen){
+        throw new Error(`Invalid code length (got ${bytes.length} bytes, expected ${expectedLen})`);
+      }
+
+      const set = new Set();
+      for(let i=0;i<AIRPORT_CATALOG.length;i++){
+        const bi = Math.floor(i/8);
+        const bit = i%8;
+        if((bytes[bi] & (1<<bit)) !== 0) set.add(AIRPORT_CATALOG[i]);
+      }
+      return set;
+    }
+
+    function getSelectedSetFromLocalState(){
+      // Reads the airports page state from localStorage and extracts checked airports (done:true).
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : null;
+        const set = new Set();
+        if(!Array.isArray(parsed)) return set;
+        for(const cont of parsed){
+          for(const country of (cont?.groups || [])){
+            for(const item of (country?.items || [])){
+              if(item?.done){
+                const code = normalizeIcao(item?.text);
+                if(code.length === 4) set.add(code);
+              }
+            }
+          }
+        }
+        return set;
+      }catch{
+        return new Set();
+      }
+    }
+
+    function buildIcaoLocationMap(){
+      const map = new Map();
+      for(const cont of demoData){
+        const contName = (cont?.title ?? "").toString().trim() || "Unknown";
+        for(const country of (cont?.groups || [])){
+          const countryName = (country?.title ?? "").toString().trim() || "Unknown";
+          for(const item of (country?.items || [])){
+            const code = normalizeIcao(item?.text);
+            if(code.length === 4) map.set(code, {continent: contName, country: countryName});
+          }
+        }
+      }
+      return map;
+    }
+    const ICAO_LOC = buildIcaoLocationMap();
+
+    function renderCommonAirports(commonSet){
+      const list = document.getElementById("commonList");
+      const meta = document.getElementById("commonMeta");
+      list.innerHTML = "";
+
+      const arr = Array.from(commonSet).sort();
+      meta.textContent = arr.length ? `${arr.length} airports that everyone in the room owns` : "No common airports yet.";
+
+      // Group by continent -> country
+      const groups = new Map(); // cont|country -> [icao]
+      for(const icao of arr){
+        const loc = ICAO_LOC.get(icao) || {continent:"Unknown", country:"Unknown"};
+        const key = `${loc.continent}|||${loc.country}`;
+        if(!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(icao);
+      }
+
+      const orderedKeys = Array.from(groups.keys()).sort((a,b)=>{
+        const [ac,ak] = a.split("|||");
+        const [bc,bk] = b.split("|||");
+        return ac.localeCompare(bc) || ak.localeCompare(bk);
+      });
+
+      for(const key of orderedKeys){
+        const [cont,country] = key.split("|||");
+        const icaos = groups.get(key);
+
+        const wrap = document.createElement("div");
+        wrap.className = "group";
+
+        const title = document.createElement("div");
+        title.className = "title";
+        title.innerHTML = `<span>${cont} → ${country}</span><span class="badge">${icaos.length}</span>`;
+
+        const chips = document.createElement("div");
+        chips.className = "chips";
+        for(const icao of icaos){
+          const c = document.createElement("span");
+          c.className = "chip mono";
+          c.textContent = icao;
+          chips.appendChild(c);
+        }
+
+        wrap.appendChild(title);
+        wrap.appendChild(chips);
+        list.appendChild(wrap);
+      }
+
+      if(!orderedKeys.length){
+        const empty = document.createElement("div");
+        empty.className = "tiny";
+        empty.textContent = "Tip: everybody needs to save a selection to their profile for the room to compute common airports.";
+        list.appendChild(empty);
+      }
+    }
+
+    // Show my current share code (computed from stored selection)
+    function updateMyShareCode(){
+      const set = getSelectedSetFromLocalState();
+      const code = encodeSetToShareCode(set);
+      document.getElementById("myCode").value = code;
+      return { set, code };
+    }
+    updateMyShareCode();
+
+    document.getElementById("copyMyCodeBtn").addEventListener("click", async ()=>{
+      try{
+        await navigator.clipboard.writeText(document.getElementById("myCode").value);
+      }catch{}
+    });
+
+    // ---- API helpers ----
+    async function api(path, opts = {}){
+      const url = apiBase + path;
+      const res = await fetch(url, {
+        ...opts,
+        headers: {
+          "content-type": "application/json",
+          ...(opts.headers || {})
+        }
+      });
+      const text = await res.text();
+      let json = null;
+      try{ json = text ? JSON.parse(text) : null; }catch{ json = { raw:text }; }
+      if(!res.ok){
+        const msg = (json && (json.error || json.message)) ? (json.error || json.message) : `HTTP ${res.status}`;
+        const err = new Error(msg);
+        err.status = res.status;
+        err.payload = json;
+        throw err;
+      }
+      return json;
+    }
+
+    function setStatus(kind, text, roomId = ""){
+      const badge = document.getElementById("roomBadge");
+      const statusText = document.getElementById("statusText");
+      badge.className = "badge " + (kind || "");
+      badge.textContent = roomId ? `Room: ${roomId}` : "No room";
+      statusText.textContent = text;
+    }
+
+    function sanitizeRoomId(v){
+      return (v ?? "").toString().trim().toUpperCase().replace(/[^A-Z0-9]/g,"");
+    }
+
+    // ---- Room logic ----
+    const roomInput = document.getElementById("roomInput");
+    const ROOM_KEY = "ts3_room_id_v1";
+    let currentRoomId = sanitizeRoomId(localStorage.getItem(ROOM_KEY) || "");
+    if(currentRoomId) roomInput.value = currentRoomId;
+
+    let pollTimer = null;
+
+    function setRoom(roomId){
+      currentRoomId = sanitizeRoomId(roomId);
+      if(currentRoomId) localStorage.setItem(ROOM_KEY, currentRoomId);
+      else localStorage.removeItem(ROOM_KEY);
+      roomInput.value = currentRoomId;
+    }
+
+    async function saveMyProfileSelection(){
+      const memberId = getMemberId();
+      const vr = validateMemberId(memberId);
+      if(!vr.ok) throw new Error("Set your memberID first.");
+      const { set, code } = updateMyShareCode();
+
+      // PUT /profiles/selection  { memberId, selectionB64, airportsVersion }
+      await api("/profiles/selection", {
+        method: "PUT",
+        body: JSON.stringify({
+          memberId,
+          airportsVersion: AIRPORTS_VERSION,
+          selectionB64: code
+        })
+      });
+      return { memberId, code, count: set.size };
+    }
+
+    async function createRoom(){
+      // ensure selection is stored first
+      const prof = await saveMyProfileSelection();
+      setStatus("warn", `Saved your selection (${prof.count}). Creating room…`);
+
+      const out = await api("/rooms", { method:"POST", body:"{}" });
+      const roomId = sanitizeRoomId(out?.roomId || out?.id || "");
+      if(!roomId) throw new Error("No roomId returned.");
+      setRoom(roomId);
+
+      // Some backends auto-add host; some require join. We'll join to be safe.
+      await joinRoom(roomId, true);
+      return roomId;
+    }
+
+    async function joinRoom(roomId, silent=false){
+      const prof = await saveMyProfileSelection();
+      const memberId = getMemberId();
+      const rid = sanitizeRoomId(roomId || roomInput.value);
+      if(!rid) throw new Error("Enter a room code.");
+
+      if(!silent) setStatus("warn", `Joining ${rid} as ${memberId}…`);
+      await api("/rooms/join", {
+        method:"POST",
+        body: JSON.stringify({ roomId: rid, memberId })
+      });
+
+      setRoom(rid);
+      setStatus("good", `Joined ${rid}. Fetching members…`, rid);
+      startPolling();
+      await refreshRoom();
+    }
+
+    async function refreshRoom(){
+      if(!currentRoomId){
+        renderCommonAirports(new Set());
+        document.getElementById("kpiMembers").textContent = "0";
+        document.getElementById("kpiReady").textContent = "0";
+        document.getElementById("kpiCommon").textContent = "0";
+        setStatus("", "Not connected.");
+        return;
+      }
+
+      // Requires the new endpoint GET /rooms/{roomId}/members (see instructions below).
+      const out = await api(`/rooms/${encodeURIComponent(currentRoomId)}/members`, { method:"GET" });
+
+      const members = Array.isArray(out?.members) ? out.members : [];
+      const codes = members.map(m => (m.selectionB64 || m.selection || "").trim()).filter(Boolean);
+
+      document.getElementById("kpiMembers").textContent = String(members.length);
+      document.getElementById("kpiReady").textContent = String(codes.length);
+
+      if(members.length === 0){
+        setStatus("warn", "Room has no members yet (or endpoint not returning members).", currentRoomId);
+      }else if(codes.length !== members.length){
+        setStatus("warn", `Some members have no selection yet (${codes.length}/${members.length}).`, currentRoomId);
+      }else{
+        setStatus("good", `All members ready (${codes.length}/${members.length}).`, currentRoomId);
+      }
+
+      // Compute intersection
+      let common = null;
+      for(const code of codes){
+        const set = decodeShareCodeToSet(code);
+        if(common === null) common = set;
+        else{
+          const next = new Set();
+          for(const x of common){ if(set.has(x)) next.add(x); }
+          common = next;
+        }
+      }
+      if(!common) common = new Set();
+
+      document.getElementById("kpiCommon").textContent = String(common.size);
+      renderCommonAirports(common);
+    }
+
+    function startPolling(){
+      stopPolling();
+      pollTimer = setInterval(()=> refreshRoom().catch(()=>{}), 8000);
+    }
+    function stopPolling(){
+      if(pollTimer){ clearInterval(pollTimer); pollTimer = null; }
+    }
+
+    document.getElementById("createBtn").addEventListener("click", async ()=>{
+      try{
+        await createRoom();
+      }catch(e){
+        setStatus("bad", `Create failed: ${e.message}`);
+      }
+    });
+
+    document.getElementById("joinBtn").addEventListener("click", async ()=>{
+      try{
+        await joinRoom(roomInput.value);
+      }catch(e){
+        setStatus("bad", `Join failed: ${e.message}`, currentRoomId);
+      }
+    });
+
+    document.getElementById("refreshBtn").addEventListener("click", async ()=>{
+      try{
+        updateMyShareCode();
+        await refreshRoom();
+      }catch(e){
+        setStatus("bad", `Refresh failed: ${e.message}`, currentRoomId);
+      }
+    });
+
+    document.getElementById("leaveBtn").addEventListener("click", ()=>{
+      stopPolling();
+      setRoom("");
+      setStatus("", "Left the room.");
+      renderCommonAirports(new Set());
+      document.getElementById("kpiMembers").textContent = "0";
+      document.getElementById("kpiReady").textContent = "0";
+      document.getElementById("kpiCommon").textContent = "0";
+    });
+
+    // Initial
+    if(currentRoomId){
+      setStatus("warn", `Room remembered: ${currentRoomId}. Click Refresh to load.`, currentRoomId);
+    }else{
+      setStatus("", "Not connected.");
+    }
+
+    // Keep my code updated if user goes back and changes selections, then returns here
+    window.addEventListener("focus", ()=> updateMyShareCode());
+  </script>
+</body>
+</html>
