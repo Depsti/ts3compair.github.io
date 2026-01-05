@@ -705,6 +705,24 @@
           <div class="divider"></div>
 
           <div class="setting-row">
+            <div class="setting-desc" style="font-weight:900; color: var(--text);">Bulk check airports</div>
+            <div class="setting-desc">Paste ICAO codes separated by commas, spaces, or new lines. Click a button to check/uncheck them. Unknown codes will be added under <b>Imported → Unknown</b>.</div>
+          </div>
+
+          <div class="setting-row">
+            <textarea id="bulkIcaoIn" class="text-area" placeholder="EDDH, EDDF, EDDS, EDDV ..."></textarea>
+            <div class="btn-row">
+              <button id="bulkApplyMergeBtn" type="button" class="delete-btn" title="Check these airports, keep your other checks">Check (merge)</button>
+              <button id="bulkApplyReplaceBtn" type="button" title="Replace your current checkmarks with this list">Check (replace)</button>
+              <button id="bulkUncheckBtn" type="button" class="delete-btn" title="Uncheck these airports (does not affect others)">Uncheck list</button>
+            </div>
+            <div id="bulkIcaoMeta" class="small" style="margin-top:8px;">—</div>
+          </div>
+
+
+          <div class="divider"></div>
+
+          <div class="setting-row">
             <div class="setting-desc">More settings will come later.</div>
           </div>
 
@@ -784,6 +802,14 @@
     const shareCompareOut = document.getElementById("shareCompareOut");
 
 
+    // Bulk ICAO list UI (Settings)
+    const bulkIcaoIn = document.getElementById("bulkIcaoIn");
+    const bulkApplyMergeBtn = document.getElementById("bulkApplyMergeBtn");
+    const bulkApplyReplaceBtn = document.getElementById("bulkApplyReplaceBtn");
+    const bulkUncheckBtn = document.getElementById("bulkUncheckBtn");
+    const bulkIcaoMeta = document.getElementById("bulkIcaoMeta");
+
+
     const submitBtn = document.getElementById("submitBtn");
     const hideResultsBtn = document.getElementById("hideResultsBtn");
     const resultsEl = document.getElementById("results");
@@ -811,6 +837,71 @@
     const memberError = document.getElementById("memberError");
     function normalizeIcao(v) {
       return (v ?? "").toString().trim().toUpperCase();
+
+    function parseIcaoList(raw) {
+      const text = (raw ?? "").toString();
+      // Split by commas, semicolons, spaces, or new lines
+      const parts = text.split(/[^A-Za-z0-9]+/g).map(s => normalizeIcao(s)).filter(Boolean);
+      const valid = [];
+      const seen = new Set();
+      for (const p of parts) {
+        if (!/^[A-Z]{4}$/.test(p)) continue;
+        if (seen.has(p)) continue;
+        seen.add(p);
+        valid.push(p);
+      }
+      return valid;
+    }
+
+    function applyIcaoList(raw, mode) {
+      if (viewModeToggle && viewModeToggle.checked) {
+        throw new Error("Read-only is enabled. Disable it in Settings first.");
+      }
+
+      // mode: "merge" | "replace" | "uncheck"
+      const list = parseIcaoList(raw);
+
+      if (mode === "replace") {
+        for (const cont of state) {
+          for (const country of (cont.groups || [])) {
+            for (const item of (country.items || [])) item.done = false;
+          }
+        }
+      }
+
+      let importedCountry = null;
+      let changed = 0;
+
+      for (const code of list) {
+        let item = findItemByIcao(code);
+        if (!item && mode !== "uncheck") {
+          if (!importedCountry) importedCountry = ensureImportedBucket();
+          item = { id: crypto.randomUUID(), text: code, done: false };
+          importedCountry.items.push(item);
+        }
+        if (!item) continue; // uncheck for unknown code = no-op
+
+        const next = (mode === "uncheck") ? false : true;
+        if (item.done !== next) {
+          item.done = next;
+          changed++;
+        }
+      }
+
+      pruneEmptyImported();
+      saveData();
+      render();
+      updateShareUI();
+      updateBulkIcaoMeta();
+
+      return { listCount: list.length, changed };
+    }
+
+    function updateBulkIcaoMeta() {
+      if (!bulkIcaoMeta) return;
+      const list = parseIcaoList(bulkIcaoIn ? bulkIcaoIn.value : "");
+      bulkIcaoMeta.textContent = list.length ? `${list.length} valid ICAO codes detected.` : "—";
+    }
     }
 
 
@@ -2126,6 +2217,7 @@ function openSettings() {
     if (shareRefreshBtn) {
       shareRefreshBtn.addEventListener("click", () => {
         updateShareUI();
+      updateBulkIcaoMeta();
         showToast("Share code updated.");
       });
     }
@@ -2181,6 +2273,44 @@ function openSettings() {
         // hide stale compare output while typing/changing the code
         if (shareCompareOut) { shareCompareOut.style.display = "none"; shareCompareOut.innerHTML = ""; }
       });
+
+    // Bulk ICAO list actions
+    if (bulkIcaoIn) {
+      bulkIcaoIn.addEventListener("input", () => {
+        updateBulkIcaoMeta();
+      });
+    }
+    if (bulkApplyMergeBtn) {
+      bulkApplyMergeBtn.addEventListener("click", () => {
+        try {
+          const r = applyIcaoList(bulkIcaoIn ? bulkIcaoIn.value : "", "merge");
+          showToast(r.listCount ? `Checked ${r.changed} airports (merge).` : "No valid ICAO codes found.");
+        } catch (e) {
+          showToast(e?.message ? `Error: ${e.message}` : "Error applying ICAO list.");
+        }
+      });
+    }
+    if (bulkApplyReplaceBtn) {
+      bulkApplyReplaceBtn.addEventListener("click", () => {
+        try {
+          const r = applyIcaoList(bulkIcaoIn ? bulkIcaoIn.value : "", "replace");
+          showToast(r.listCount ? `Checked ${r.changed} airports (replace).` : "No valid ICAO codes found.");
+        } catch (e) {
+          showToast(e?.message ? `Error: ${e.message}` : "Error applying ICAO list.");
+        }
+      });
+    }
+    if (bulkUncheckBtn) {
+      bulkUncheckBtn.addEventListener("click", () => {
+        try {
+          const r = applyIcaoList(bulkIcaoIn ? bulkIcaoIn.value : "", "uncheck");
+          showToast(r.listCount ? `Unchecked ${r.changed} airports.` : "No valid ICAO codes found.");
+        } catch (e) {
+          showToast(e?.message ? `Error: ${e.message}` : "Error unchecking ICAO list.");
+        }
+      });
+    }
+
     }
 
 document.addEventListener("keydown", (e) => {
@@ -2196,10 +2326,6 @@ submitBtn.addEventListener("click", renderResults);
     updateMemberUi();
     saveData();
     render();
-  </script>
-</body>
-</html>
-
   </script>
 </body>
 </html>
