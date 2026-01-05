@@ -837,6 +837,7 @@
     const memberError = document.getElementById("memberError");
     function normalizeIcao(v) {
       return (v ?? "").toString().trim().toUpperCase();
+    }
 
     function parseIcaoList(raw) {
       const text = (raw ?? "").toString();
@@ -901,7 +902,6 @@
       if (!bulkIcaoMeta) return;
       const list = parseIcaoList(bulkIcaoIn ? bulkIcaoIn.value : "");
       bulkIcaoMeta.textContent = list.length ? `${list.length} valid ICAO codes detected.` : "—";
-    }
     }
 
 
